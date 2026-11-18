@@ -18,6 +18,12 @@ test("only the connected dashboard key can change specials", () => {
   assert.equal(editorMayWrite("", fingerprints), false);
 });
 
+test("the published menu trusts the dashboard connection code, not the code itself", () => {
+  assert.equal(isConnected(), true);
+  assert.equal(editorMayWrite("6a5490ba584ae2afdada772b1caa3a3ae1498b9c1f17c957cd2aa75b58020c3f"), false);
+  assert.equal(editorMayWrite("not-the-dashboard-key"), false);
+});
+
 test("nothing can change specials before a dashboard is connected", () => {
   assert.equal(isConnected([]), false);
   assert.equal(editorMayWrite("anything", []), false);

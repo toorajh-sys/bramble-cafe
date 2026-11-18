@@ -2,7 +2,9 @@ import { createHash, timingSafeEqual } from "node:crypto";
 
 // SHA-256 fingerprints of the dashboard's specials key, copied from the dashboard's connection code.
 // The key itself lives only in the dashboard's database; a fingerprint cannot be turned back into it.
-export const DASHBOARD_KEY_FINGERPRINTS = [];
+export const DASHBOARD_KEY_FINGERPRINTS = [
+  "6a5490ba584ae2afdada772b1caa3a3ae1498b9c1f17c957cd2aa75b58020c3f",
+];
 
 export function isConnected(fingerprints = DASHBOARD_KEY_FINGERPRINTS) {
   return fingerprints.length > 0;
