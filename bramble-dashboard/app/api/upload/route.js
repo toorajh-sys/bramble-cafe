@@ -4,6 +4,7 @@ import { sql } from "../../../lib/db.js";
 import { json, requireWriter } from "../../../lib/guard.js";
 import { rowsToSales } from "../../../lib/parse-sales.js";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_ROWS } from "../../../lib/config.js";
+import { assertXlsxWithinBudget, SpreadsheetTooLargeError } from "../../../lib/xlsx-budget.js";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ async function readRows(file) {
   const name = file.name.toLowerCase();
   const buffer = Buffer.from(await file.arrayBuffer());
   if (name.endsWith(".xlsx")) {
+    assertXlsxWithinBudget(buffer);
     return readSheet(buffer);
   }
   if (name.endsWith(".csv") || name.endsWith(".txt")) {
@@ -47,6 +49,7 @@ export async function POST(request) {
     }
     parsed = rowsToSales(rows);
   } catch (error) {
+    if (error instanceof SpreadsheetTooLargeError) return json({ error: error.message }, 413);
     const message = error instanceof Error ? error.message : "Could not read that spreadsheet.";
     return json({ error: message }, 422);
   }
