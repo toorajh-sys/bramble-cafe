@@ -1,0 +1,64 @@
+{
+  "isSample": true,
+  "name": "Bramble",
+  "tagline": "Small-batch coffee, fresh bakes and a quiet corner to linger in.",
+  "address": "12 Orchard Lane",
+  "phone": "(555) 010-0142",
+  "timezone": "America/New_York",
+  "hours": {
+    "mon": null,
+    "tue": ["07:00", "15:00"],
+    "wed": ["07:00", "15:00"],
+    "thu": ["07:00", "15:00"],
+    "fri": ["07:00", "17:00"],
+    "sat": ["08:00", "17:00"],
+    "sun": ["08:00", "14:00"]
+  },
+  "specials": {
+    "title": "Today's specials",
+    "weekly": {
+      "mon": [],
+      "tue": [{ "name": "Maple Oat Latte", "description": "Oat milk, espresso and a drizzle of maple.", "price": 5.5 }],
+      "wed": [
+        { "name": "Brambleberry Scone", "description": "Baked this morning with wild blackberries.", "price": 3.75 },
+        { "name": "Scone & Drip Coffee", "description": "Any scone with a bottomless drip coffee.", "price": 6.0 }
+      ],
+      "thu": [{ "name": "Soup & Half Sandwich", "description": "Tomato soup with a half grilled cheese.", "price": 9.5 }],
+      "fri": [
+        { "name": "Friday Cardamom Bun", "description": "Warm, sticky and gone by noon.", "price": 4.25 },
+        { "name": "Iced Honey Lavender Latte", "description": "Local honey, lavender, espresso over ice.", "price": 5.75 }
+      ],
+      "sat": [{ "name": "Weekend Brunch Plate", "description": "Eggs, sourdough toast, greens and roasted tomatoes.", "price": 12.0 }],
+      "sun": [{ "name": "Cinnamon Roll", "description": "Cream cheese glaze, served warm.", "price": 4.5 }]
+    },
+    "dates": {}
+  },
+  "menu": [
+    {
+      "category": "Coffee",
+      "items": [
+        { "name": "Drip Coffee", "description": "Rotating single-origin, refills welcome.", "price": 3.0 },
+        { "name": "Flat White", "description": "Double espresso with silky steamed milk.", "price": 4.0 },
+        { "name": "Latte", "description": "Espresso and steamed milk, oat or whole.", "price": 4.5 },
+        { "name": "Cold Brew", "description": "Steeped for 18 hours, served over ice.", "price": 4.5 },
+        { "name": "Matcha", "description": "Ceremonial grade, whisked to order.", "price": 5.0 }
+      ]
+    },
+    {
+      "category": "Bakery",
+      "items": [
+        { "name": "Butter Croissant", "description": "Flaky, golden and baked daily.", "price": 3.5 },
+        { "name": "Banana Bread", "description": "Thick slice with a toasted walnut crust.", "price": 4.0 },
+        { "name": "Blueberry Muffin", "price": 3.75 },
+        { "name": "Brambleberry Scone", "price": 3.75 }
+      ]
+    },
+    {
+      "category": "Savory",
+      "items": [
+        { "name": "Avocado Toast", "description": "Sourdough, lime, chili flakes, soft egg.", "price": 9.0 },
+        { "name": "Sourdough Sandwich", "description": "Ask us about today's filling.", "price": 8.5 }
+      ]
+    }
+  ]
+}
