@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { getIdentity } from "../cursor/identity.js";
+import { readViewer } from "../lib/guard.js";
 import { loadDashboard } from "../lib/queries.js";
 import { formatDay, formatMoney, formatNumber } from "../lib/format.js";
 import { CAFE_NAME } from "../lib/config.js";
@@ -17,7 +17,7 @@ const RANGES = [
 ];
 
 export default async function Page({ searchParams }) {
-  const identity = await getIdentity(await headers());
+  const identity = await readViewer(await headers());
   if (!identity.verified) {
     return (
       <main className="shell">
@@ -89,7 +89,7 @@ export default async function Page({ searchParams }) {
       <UploadPanel hasData={Boolean(data)} />
 
       <footer className="foot muted">
-        {identity.simulated ? "Local preview with a simulated viewer." : identity.email ? `Signed in as ${identity.email}.` : ""}
+        {identity.email ? `Signed in as ${identity.email}.` : ""}
       </footer>
     </main>
   );
