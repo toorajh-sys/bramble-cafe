@@ -1,23 +1,19 @@
-import { verifyIdentity } from "../cursor/identity.js";
+import { createHash, timingSafeEqual } from "node:crypto";
 
-function payloadOf(token) {
-  const part = String(token).split(".")[1];
-  if (!part) return null;
-  try {
-    const value = JSON.parse(Buffer.from(part, "base64url").toString("utf8"));
-    return value && typeof value === "object" ? value : null;
-  } catch {
-    return null;
-  }
+// SHA-256 fingerprints of the dashboard's specials key, copied from the dashboard's connection code.
+// The key itself lives only in the dashboard's database; a fingerprint cannot be turned back into it.
+export const DASHBOARD_KEY_FINGERPRINTS = [];
+
+export function isConnected(fingerprints = DASHBOARD_KEY_FINGERPRINTS) {
+  return fingerprints.length > 0;
 }
 
-/** A signed-in person from the dashboard may update today's specials. A made-up token may not. */
-export async function editorMayWrite(token) {
-  if (typeof token !== "string" || token.trim() === "") return false;
-  const identity = await verifyIdentity(token.trim());
-  if (identity.verified) return identity.kind === "person";
-  if (identity.reason !== "wrong_audience") return false;
-  const payload = payloadOf(token);
-  if (!payload || payload.kind !== "person" || typeof payload.exp !== "number") return false;
-  return payload.exp * 1000 + 60_000 >= Date.now();
+/** Only the connected dashboard, holding its own key, may replace today's specials. */
+export function editorMayWrite(token, fingerprints = DASHBOARD_KEY_FINGERPRINTS) {
+  if (typeof token !== "string" || token === "" || token.length > 256) return false;
+  const given = createHash("sha256").update(token).digest();
+  return fingerprints.some((hex) => {
+    const expected = Buffer.from(hex, "hex");
+    return expected.length === given.length && timingSafeEqual(expected, given);
+  });
 }

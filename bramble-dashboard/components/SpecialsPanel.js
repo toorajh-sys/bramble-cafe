@@ -24,13 +24,16 @@ export default function SpecialsPanel() {
   const [items, setItems] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
+  const [connectCode, setConnectCode] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/specials")
       .then((response) => response.json())
       .then((data) => {
-        if (!cancelled && Array.isArray(data.items)) setItems(fromServer(data.items));
+        if (cancelled) return;
+        if (Array.isArray(data.items)) setItems(fromServer(data.items));
+        if (data.connected === false && typeof data.connectionCode === "string") setConnectCode(data.connectionCode);
       })
       .catch(() => {
         if (!cancelled) setResult({ error: "Could not load today's specials." });
@@ -62,9 +65,11 @@ export default function SpecialsPanel() {
       });
       const data = await response.json().catch(() => ({ error: "Could not save specials." }));
       if (!response.ok) {
+        if (data.needsConnection && typeof data.connectionCode === "string") setConnectCode(data.connectionCode);
         setResult({ error: data.error ?? "Could not save specials." });
         return;
       }
+      setConnectCode("");
       setItems(fromServer(data.items ?? []));
       setResult({ ok: true, count: data.items?.length ?? 0 });
     } catch {
@@ -78,6 +83,12 @@ export default function SpecialsPanel() {
     <section className="card" aria-labelledby="specials-title">
       <h2 id="specials-title">Today's specials</h2>
       <p className="muted">Up to 3. These show on the public menu for today, and tomorrow starts blank.</p>
+      {connectCode && (
+        <div className="notice">
+          <p>One-time step: send this connection code to your Cursor agent so the menu accepts specials from this dashboard. It is safe to share.</p>
+          <code className="connect-code">{connectCode}</code>
+        </div>
+      )}
       <form onSubmit={onSubmit} className="specials-grid">
         {items.map((item, index) => (
           <fieldset key={index} className="special">

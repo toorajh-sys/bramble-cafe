@@ -1,5 +1,5 @@
 import { sql, withTransaction } from "../../../lib/db.js";
-import { editorMayWrite } from "../../../lib/editor.js";
+import { editorMayWrite, isConnected } from "../../../lib/editor.js";
 import { normalizeSpecials } from "../../../lib/specials.js";
 import { cafeToday, isIsoDate } from "../../../lib/today.js";
 
@@ -10,6 +10,10 @@ function publicJson(body, status = 200) {
     status,
     headers: { "cache-control": "no-store", "access-control-allow-origin": "*" },
   });
+}
+
+function writeJson(body, status = 200) {
+  return Response.json(body, { status, headers: { "cache-control": "no-store" } });
 }
 
 async function readSpecials(date) {
@@ -28,32 +32,33 @@ export async function GET(request) {
   const requested = new URL(request.url).searchParams.get("date");
   const date = requested === null ? cafeToday() : requested;
   if (!isIsoDate(date)) return publicJson({ error: "Use a date like 2026-11-18." }, 400);
-  return publicJson({ date, items: await readSpecials(date) });
+  return publicJson({ date, items: await readSpecials(date), connected: isConnected() });
 }
 
 export async function PUT(request) {
+  if (!isConnected()) return writeJson({ error: "not_connected" }, 503);
   const declared = Number(request.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > 16_384) {
-    return publicJson({ error: "Those specials are too long." }, 413);
+    return writeJson({ error: "Those specials are too long." }, 413);
   }
   const header = request.headers.get("authorization") ?? "";
   const token = header.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
-  if (!(await editorMayWrite(token))) {
-    return publicJson({ error: "Could not update specials." }, 401);
+  if (!editorMayWrite(token)) {
+    return writeJson({ error: "Could not update specials." }, 401);
   }
 
   let body;
   try {
     body = await request.json();
   } catch {
-    return publicJson({ error: "Could not read those specials." }, 400);
+    return writeJson({ error: "Could not read those specials." }, 400);
   }
   let items;
   try {
     items = normalizeSpecials(body?.items);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not save those specials.";
-    return publicJson({ error: message }, 422);
+    return writeJson({ error: message }, 422);
   }
 
   const date = cafeToday();
@@ -67,5 +72,5 @@ export async function PUT(request) {
       [date, items.map((_, index) => index + 1), items.map((item) => item.name), items.map((item) => item.description), items.map((item) => item.price)],
     );
   });
-  return publicJson({ ok: true, date, items });
+  return writeJson({ ok: true, date, items });
 }
