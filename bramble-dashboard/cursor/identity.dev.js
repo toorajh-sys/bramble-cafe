@@ -3,10 +3,5 @@
 // The viewer is invented. Change the fields to see another role or email (teamRole: "member"), or set DEV_VIEWER to null to see the signed-out state (missing_header, 401 from requireIdentity), which every page still has to render. Never write a real person's identity here.
 
 /** @type {import("./identity.js").DevViewer | null} */
-export const DEV_VIEWER = {
-  sub: "user:dev",
-  email: "dev@example.com",
-  name: "Dev Viewer",
-  teamId: 1,
-  teamRole: "admin",
-};
+// Stay signed out when no identity header is present, so the local fallback never becomes a viewer.
+export const DEV_VIEWER = null;
