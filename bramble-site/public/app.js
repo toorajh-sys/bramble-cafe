@@ -29,11 +29,16 @@ function nowInZone(timeZone) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone, weekday: "short", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
   }).formatToParts(new Date());
-  const get = (type) => parts.find((p) => p.type === type).value;
+  const get = (type) => parts.find((p) => p.type === type)?.value ?? "";
+  let hour = Number(get("hour"));
+  const dayPeriod = get("dayPeriod").toLowerCase();
+  if (hour === 24) hour = 0;
+  if (dayPeriod.startsWith("pm") && hour < 12) hour += 12;
+  if (dayPeriod.startsWith("am") && hour === 12) hour = 0;
   return {
     day: get("weekday").slice(0, 3).toLowerCase(),
     date: `${get("year")}-${get("month")}-${get("day")}`,
-    minutes: Number(get("hour")) * 60 + Number(get("minute")),
+    minutes: hour * 60 + Number(get("minute")),
   };
 }
 
@@ -79,16 +84,37 @@ function renderHours(content, now) {
   document.getElementById("contact").textContent = contact;
 }
 
-function renderSpecials(content, now) {
-  const specials = content.specials ?? {};
-  const items = specials.dates?.[now.date] ?? specials.weekly?.[now.day] ?? [];
-  document.getElementById("specials-title").textContent = specials.title ?? "Today's specials";
+function showSpecials(items) {
   const list = document.getElementById("specials-list");
-  if (items.length === 0) {
+  list.replaceChildren();
+  const dishes = items.filter((item) => item && typeof item.name === "string" && item.name.trim() !== "").slice(0, 3);
+  if (dishes.length === 0) {
     list.append(el("p", "empty", "No specials today. Our full menu is below."));
     return;
   }
-  items.forEach((item) => list.append(dish(item)));
+  dishes.forEach((item) => list.append(dish({
+    name: item.name,
+    description: typeof item.description === "string" ? item.description : "",
+    price: typeof item.price === "number" ? item.price : undefined,
+  })));
+}
+
+async function renderSpecials(content, now) {
+  document.getElementById("specials-title").textContent = "Today's specials";
+  if (!content.specialsUrl) {
+    showSpecials([]);
+    return;
+  }
+  try {
+    const url = new URL(content.specialsUrl, window.location.href);
+    url.searchParams.set("date", now.date);
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) throw new Error(String(response.status));
+    const data = await response.json();
+    showSpecials(Array.isArray(data.items) ? data.items : []);
+  } catch {
+    showSpecials([]);
+  }
 }
 
 function renderMenu(content) {
@@ -110,9 +136,8 @@ async function main() {
     document.getElementById("name").textContent = content.name;
     document.getElementById("tagline").textContent = content.tagline ?? "";
     document.title = `${content.name} cafe: menu, hours and today's specials`;
-    document.getElementById("sample-banner").hidden = !content.isSample;
     renderStatus(content, now);
-    renderSpecials(content, now);
+    await renderSpecials(content, now);
     renderHours(content, now);
     renderMenu(content);
   } catch {

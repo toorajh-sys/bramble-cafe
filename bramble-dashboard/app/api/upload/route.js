@@ -27,6 +27,11 @@ export async function POST(request) {
   const identity = await requireWriter(request);
   if (identity instanceof Response) return identity;
 
+  const declaredLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_UPLOAD_BYTES + 256 * 1024) {
+    return json({ error: `That file is larger than ${MAX_UPLOAD_BYTES / 1024 / 1024} MB. Try uploading one month at a time.` }, 413);
+  }
+
   let file;
   try {
     const form = await request.formData();

@@ -22,27 +22,46 @@ export async function readViewer(request) {
   return rejectUnsigned(await getIdentity(request));
 }
 
-function isSameOrigin(request) {
+function hostsMatch(left, right) {
+  if (!left || !right) return false;
+  if (left === right) return true;
+  return left.replace(/:\d+$/, "") === right.replace(/:\d+$/, "");
+}
+
+/** A browser same-origin upload stays allowed when the proxy host header does not match the public address. */
+export function allowsWriteOrigin(request) {
   const site = request.headers.get("sec-fetch-site");
-  if (site && site !== "same-origin" && site !== "none") return false;
+  if (site === "cross-site") return false;
+  if (site === "same-origin" || site === "none") return true;
   const origin = request.headers.get("origin");
   if (!origin) return true;
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  let originHost = "";
   try {
-    return new URL(origin).host === host;
+    originHost = new URL(origin).host.toLowerCase();
   } catch {
     return false;
   }
+  const candidates = [];
+  const forwarded = request.headers.get("x-forwarded-host");
+  if (forwarded) candidates.push(...forwarded.split(",").map((part) => part.trim().toLowerCase()));
+  const host = request.headers.get("host");
+  if (host) candidates.push(host.trim().toLowerCase());
+  try {
+    candidates.push(new URL(request.url).host.toLowerCase());
+  } catch {
+    // The request URL is not needed when a forwarded host already matched.
+  }
+  return candidates.some((candidate) => hostsMatch(candidate, originHost));
 }
 
 /** Gate for routes that change data: a gate-signed person, a same-site request, and never from the preview host. */
 export async function requireWriter(request) {
-  if (!isSameOrigin(request)) return json({ error: "Cross-site request refused." }, 403);
+  if (!allowsWriteOrigin(request)) return json({ error: "Cross-site request refused." }, 403);
   const checked = await requireIdentity(request);
   if (checked instanceof Response) return checked;
   const identity = rejectUnsigned(checked);
   if (!identity.verified) return json({ error: "unauthorized", reason: "missing_header" }, 401);
-  if (identity.kind !== "person") return json({ error: "Only a signed-in person can change sales data." }, 403);
+  if (identity.kind !== "person") return json({ error: "Only a signed-in person can change this." }, 403);
   if (identity.stage === "preview") {
     return json({ error: "This is a preview, so uploads are switched off. Use the live dashboard to upload sales." }, 403);
   }

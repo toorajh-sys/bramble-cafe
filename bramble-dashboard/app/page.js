@@ -5,6 +5,7 @@ import { loadDashboard } from "../lib/queries.js";
 import { formatDay, formatMoney, formatNumber } from "../lib/format.js";
 import { CAFE_NAME } from "../lib/config.js";
 import BarChart from "../components/BarChart.js";
+import SpecialsPanel from "../components/SpecialsPanel.js";
 import UploadPanel from "../components/UploadPanel.js";
 
 export const dynamic = "force-dynamic";
@@ -86,6 +87,7 @@ export default async function Page({ searchParams }) {
         </>
       )}
 
+      <SpecialsPanel />
       <UploadPanel hasData={Boolean(data)} />
 
       <footer className="foot muted">
