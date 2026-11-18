@@ -1,5 +1,6 @@
 import { sql, withTransaction } from "../../../lib/db.js";
-import { keysMatch, normalizeSpecials } from "../../../lib/specials.js";
+import { editorMayWrite } from "../../../lib/editor.js";
+import { normalizeSpecials } from "../../../lib/specials.js";
 import { cafeToday, isIsoDate } from "../../../lib/today.js";
 
 export const dynamic = "force-dynamic";
@@ -31,9 +32,14 @@ export async function GET(request) {
 }
 
 export async function PUT(request) {
-  const key = process.env.BRAMBLE_SPECIALS_KEY?.trim() ?? "";
-  if (key === "" || !keysMatch(request.headers.get("x-bramble-key"), key)) {
-    return publicJson({ error: "Could not update specials." }, key === "" ? 503 : 401);
+  const declared = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > 16_384) {
+    return publicJson({ error: "Those specials are too long." }, 413);
+  }
+  const header = request.headers.get("authorization") ?? "";
+  const token = header.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
+  if (!(await editorMayWrite(token))) {
+    return publicJson({ error: "Could not update specials." }, 401);
   }
 
   let body;
