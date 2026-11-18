@@ -2,6 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { readViewer } from "../lib/guard.js";
 import { loadDashboard } from "../lib/queries.js";
+import { cafeToday } from "../lib/today.js";
 import { formatDay, formatMoney, formatNumber } from "../lib/format.js";
 import { CAFE_NAME } from "../lib/config.js";
 import BarChart from "../components/BarChart.js";
@@ -32,7 +33,7 @@ export default async function Page({ searchParams }) {
 
   const params = await searchParams;
   const range = RANGES.some((r) => r.key === params?.range) ? params.range : "30";
-  const data = await loadDashboard(range);
+  const data = await loadDashboard(range, cafeToday());
   const firstName = identity.kind === "person" && identity.name ? identity.name.split(" ")[0] : null;
 
   return (
@@ -75,13 +76,30 @@ export default async function Page({ searchParams }) {
             />
           </section>
 
+          <section className="card" aria-labelledby="week-title">
+            <h2 id="week-title">This week vs last week</h2>
+            <div className="kpis">
+              <Kpi
+                label={`This week, ${formatDay(data.weeks.thisStart)} – ${formatDay(data.weeks.thisEnd)}`}
+                value={formatMoney(data.weeks.thisRevenue)}
+                sub={`${formatNumber(data.weeks.thisUnits)} sold`}
+              />
+              <Kpi
+                label={`Last week, ${formatDay(data.weeks.lastStart)} – ${formatDay(data.weeks.lastEnd)}`}
+                value={formatMoney(data.weeks.lastRevenue)}
+                sub={`${formatNumber(data.weeks.lastUnits)} sold`}
+              />
+              <Kpi label="Same days last week" value={formatMoney(data.weeks.sameRevenue)} sub={data.weeks.change} />
+            </div>
+          </section>
+
           <section className="card" aria-labelledby="daily-title">
             <h2 id="daily-title">{data.weekly ? "Sales by week" : "Sales by day"}</h2>
             <BarChart series={data.series} weekly={data.weekly} />
           </section>
 
           <section className="card" aria-labelledby="items-title">
-            <h2 id="items-title">Best-selling items</h2>
+            <h2 id="items-title">Top 5 best sellers</h2>
             <BestSellers items={data.items} />
           </section>
         </>
@@ -108,7 +126,8 @@ function Kpi({ label, value, sub }) {
 }
 
 function BestSellers({ items }) {
-  const top = items.slice(0, 10);
+  const top = items.slice(0, 5);
+  if (top.length === 0) return <p className="muted">No items in this range.</p>;
   const maxUnits = Math.max(...top.map((i) => i.units), 1);
   return (
     <ol className="best">

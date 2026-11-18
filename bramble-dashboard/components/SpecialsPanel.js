@@ -33,7 +33,7 @@ export default function SpecialsPanel() {
       .then((data) => {
         if (cancelled) return;
         if (Array.isArray(data.items)) setItems(fromServer(data.items));
-        if (data.connected === false && typeof data.connectionCode === "string") setConnectCode(data.connectionCode);
+        setConnectCode(data.connected === true ? "" : data.connectionCode || "");
       })
       .catch(() => {
         if (!cancelled) setResult({ error: "Could not load today's specials." });
@@ -65,7 +65,7 @@ export default function SpecialsPanel() {
       });
       const data = await response.json().catch(() => ({ error: "Could not save specials." }));
       if (!response.ok) {
-        if (data.needsConnection && typeof data.connectionCode === "string") setConnectCode(data.connectionCode);
+        if (typeof data.connectionCode === "string") setConnectCode(data.connectionCode);
         setResult({ error: data.error ?? "Could not save specials." });
         return;
       }
@@ -85,7 +85,7 @@ export default function SpecialsPanel() {
       <p className="muted">Up to 3. These show on the public menu for today, and tomorrow starts blank.</p>
       {connectCode && (
         <div className="notice">
-          <p>One-time step: send this connection code to your Cursor agent so the menu accepts specials from this dashboard. It is safe to share.</p>
+          <p>Copy this connection code into the Cursor chat so the public menu can show your specials. It is safe to share.</p>
           <code className="connect-code">{connectCode}</code>
         </div>
       )}

@@ -25,10 +25,10 @@ function minutes(hhmm) {
   return h * 60 + m;
 }
 
-function nowInZone(timeZone) {
+export function nowInZone(timeZone, date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone, weekday: "short", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
-  }).formatToParts(new Date());
+  }).formatToParts(date);
   const get = (type) => parts.find((p) => p.type === type)?.value ?? "";
   let hour = Number(get("hour"));
   const dayPeriod = get("dayPeriod").toLowerCase();
@@ -42,6 +42,15 @@ function nowInZone(timeZone) {
   };
 }
 
+export function openLabel(hours, now) {
+  const today = hours[now.day];
+  if (!today) return "Closed today";
+  const [open, close] = today;
+  if (now.minutes >= minutes(open) && now.minutes < minutes(close)) return `Open now until ${formatTime(close)}`;
+  if (now.minutes < minutes(open)) return `Opens today at ${formatTime(open)}`;
+  return "Closed for today";
+}
+
 function dish(item) {
   const row = el("div", "dish");
   const text = el("div");
@@ -52,24 +61,10 @@ function dish(item) {
 }
 
 function renderStatus(content, now) {
-  const today = content.hours[now.day];
+  const label = openLabel(content.hours, now);
   const status = document.getElementById("open-status");
-  if (!today) {
-    status.textContent = "Closed today";
-    status.className = "status closed";
-    return;
-  }
-  const [open, close] = today;
-  if (now.minutes >= minutes(open) && now.minutes < minutes(close)) {
-    status.textContent = `Open now until ${formatTime(close)}`;
-    status.className = "status open";
-  } else if (now.minutes < minutes(open)) {
-    status.textContent = `Opens today at ${formatTime(open)}`;
-    status.className = "status closed";
-  } else {
-    status.textContent = "Closed for today";
-    status.className = "status closed";
-  }
+  status.textContent = label;
+  status.className = label.startsWith("Open now") ? "status open" : "status closed";
 }
 
 function renderHours(content, now) {
@@ -148,4 +143,4 @@ async function main() {
   }
 }
 
-main();
+if (typeof document !== "undefined") main();

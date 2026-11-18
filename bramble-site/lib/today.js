@@ -1,4 +1,4 @@
-export const CAFE_TIMEZONE = "America/New_York";
+export const CAFE_TIMEZONE = "America/Los_Angeles";
 
 export function cafeToday(now = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", {

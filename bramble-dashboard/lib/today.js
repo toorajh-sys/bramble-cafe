@@ -1,4 +1,4 @@
-export const CAFE_TIMEZONE = "America/New_York";
+export const CAFE_TIMEZONE = "America/Los_Angeles";
 
 function part(parts, type) {
   return parts.find((item) => item.type === type)?.value ?? "";

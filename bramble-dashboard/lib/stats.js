@@ -45,6 +45,48 @@ export function bucketWeeks(days) {
   return [...weeks.values()].map((w) => ({ ...w, revenue: Math.round(w.revenue * 100) / 100 }));
 }
 
+/** Monday-based this week so far, last full week, and the same weekdays last week. */
+export function weekComparison(today) {
+  const end = toDayNumber(today);
+  const weekday = (end + 3) % 7;
+  const thisStart = end - weekday;
+  const lastStart = thisStart - 7;
+  return {
+    thisStart: fromDayNumber(thisStart),
+    thisEnd: today,
+    lastStart: fromDayNumber(lastStart),
+    lastEnd: fromDayNumber(thisStart - 1),
+    lastSameEnd: fromDayNumber(lastStart + weekday),
+  };
+}
+
+export function sumBetween(rows, start, end) {
+  const first = toDayNumber(start);
+  const last = toDayNumber(end);
+  const total = rows.reduce(
+    (sum, row) => {
+      const day = toDayNumber(row.day);
+      if (day < first || day > last) return sum;
+      return { revenue: sum.revenue + row.revenue, units: sum.units + row.units };
+    },
+    { revenue: 0, units: 0 },
+  );
+  return {
+    revenue: Math.round(total.revenue * 100) / 100,
+    units: Math.round(total.units * 100) / 100,
+  };
+}
+
+export function weekChange(current, previous) {
+  const round = (value) => Math.round(value * 100) / 100;
+  const now = round(current);
+  const then = round(previous);
+  if (now === then) return "No change";
+  if (then === 0) return "No sales on these days last week";
+  const percent = Math.round(((now - then) / then) * 100);
+  return `${percent > 0 ? "Up" : "Down"} ${Math.abs(percent)}%`;
+}
+
 export function niceMax(value) {
   if (value <= 0) return 1;
   const exponent = Math.floor(Math.log10(value));

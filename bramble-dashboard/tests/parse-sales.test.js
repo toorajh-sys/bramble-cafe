@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseDate, parseMoney, rowsToSales, detectColumns } from "../lib/parse-sales.js";
-import { bucketWeeks, fillDays, niceMax, rangeStart } from "../lib/stats.js";
+import { bucketWeeks, fillDays, niceMax, rangeStart, sumBetween, weekChange, weekComparison } from "../lib/stats.js";
 
 test("parseMoney handles currency symbols, thousands and negatives", () => {
   assert.equal(parseMoney("$1,234.50"), 1234.5);
@@ -66,4 +66,21 @@ test("stats helpers", () => {
   assert.equal(niceMax(0), 1);
   assert.equal(niceMax(137), 200);
   assert.equal(niceMax(1000), 1000);
+  assert.deepEqual(weekComparison("2026-11-18"), {
+    thisStart: "2026-11-16",
+    thisEnd: "2026-11-18",
+    lastStart: "2026-11-09",
+    lastEnd: "2026-11-15",
+    lastSameEnd: "2026-11-11",
+  });
+  const rows = [
+    { day: "2026-11-16", revenue: 10, units: 1 },
+    { day: "2026-11-11", revenue: 4, units: 1 },
+    { day: "2026-11-09", revenue: 6, units: 1 },
+  ];
+  assert.equal(sumBetween(rows, "2026-11-16", "2026-11-18").revenue, 10);
+  assert.equal(sumBetween(rows, "2026-11-09", "2026-11-11").revenue, 10);
+  assert.equal(weekChange(12, 10), "Up 20%");
+  assert.equal(weekChange(8, 10), "Down 20%");
+  assert.equal(weekChange(0, 0), "No change");
 });

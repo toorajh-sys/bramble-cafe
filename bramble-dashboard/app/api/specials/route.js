@@ -1,7 +1,8 @@
 import { json, readViewer, requireWriter } from "../../../lib/guard.js";
 import { connectionCode, menuSecret } from "../../../lib/menu-link.js";
+import { readSavedSpecials, saveSpecials } from "../../../lib/saved-specials.js";
 import { normalizeSpecials } from "../../../lib/specials.js";
-import { isIsoDate } from "../../../lib/today.js";
+import { cafeToday, isIsoDate } from "../../../lib/today.js";
 
 export const dynamic = "force-dynamic";
 
@@ -16,16 +17,29 @@ function menuUrl(date) {
 export async function GET(request) {
   const identity = await readViewer(request);
   if (!identity.verified) return json({ error: "unauthorized", reason: identity.reason ?? "missing_header" }, 401);
-  const date = new URL(request.url).searchParams.get("date");
-  if (date !== null && !isIsoDate(date)) return json({ error: "Use a date like 2026-11-18." }, 400);
+  const requested = new URL(request.url).searchParams.get("date");
+  if (requested !== null && !isIsoDate(requested)) return json({ error: "Use a date like 2026-11-18." }, 400);
+
+  const today = cafeToday();
+  const saved = await readSavedSpecials(today);
   const code = connectionCode(await menuSecret());
+  let connected = false;
+  let menuItems = null;
   try {
-    const response = await fetch(menuUrl(date), { cache: "no-store" });
-    const data = await response.json().catch(() => ({ error: "Could not load today's specials." }));
-    return json({ ...data, connectionCode: code }, response.ok ? 200 : response.status);
+    const response = await fetch(menuUrl(requested), { cache: "no-store" });
+    if (response.ok) {
+      const data = await response.json().catch(() => ({}));
+      connected = data.connected === true;
+      if (connected && Array.isArray(data.items)) menuItems = data.items;
+    }
   } catch {
-    return json({ error: "Could not reach the menu.", connectionCode: code }, 502);
+    connected = false;
   }
+  return json({
+    items: menuItems ?? saved,
+    connected,
+    connectionCode: connected ? null : code,
+  });
 }
 
 export async function PUT(request) {
@@ -46,7 +60,10 @@ export async function PUT(request) {
     return json({ error: message }, 422);
   }
 
+  const today = cafeToday();
+  await saveSpecials(today, items);
   const secret = await menuSecret();
+  const code = connectionCode(secret);
   try {
     const response = await fetch(menuUrl(), {
       method: "PUT",
@@ -54,17 +71,17 @@ export async function PUT(request) {
       body: JSON.stringify({ items }),
       cache: "no-store",
     });
-    const data = await response.json().catch(() => ({ error: "Could not update the menu." }));
-    if (response.ok) return json(data, 200);
-    if (response.status === 401 || response.status === 503) {
-      return json({
-        error: "The menu is not connected to this dashboard yet.",
-        needsConnection: true,
-        connectionCode: connectionCode(secret),
-      }, 409);
-    }
-    return json(data, response.status);
+    if (response.ok) return json({ ok: true, items, connected: true });
   } catch {
-    return json({ error: "Could not reach the menu." }, 502);
+    // The menu did not answer. The specials are still saved on the dashboard.
   }
+  return json(
+    {
+      error: "Saved on the dashboard. The public menu is not connected yet, so customers cannot see them until the connection code below is added.",
+      needsConnection: true,
+      connectionCode: code,
+      items,
+    },
+    409,
+  );
 }

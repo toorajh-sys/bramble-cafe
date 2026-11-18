@@ -1,9 +1,9 @@
 import { sql } from "./db.js";
-import { bucketWeeks, fillDays, rangeStart } from "./stats.js";
+import { bucketWeeks, fillDays, rangeStart, sumBetween, weekChange, weekComparison } from "./stats.js";
 
 const MAX_DAILY_POINTS = 100;
 
-export async function loadDashboard(range) {
+export async function loadDashboard(range, today) {
   const [bounds] = await sql(
     "select min(sale_date)::text as first_day, max(sale_date)::text as last_day, count(*)::int as lines from sales",
   );
@@ -44,5 +44,27 @@ export async function loadDashboard(range) {
     activeDays,
     bestDay,
     averagePerDay: activeDays ? totalRevenue / activeDays : 0,
+    weeks: await loadWeeks(today),
+  };
+}
+
+async function loadWeeks(today) {
+  const span = weekComparison(today);
+  const rows = await sql(
+    `select sale_date::text as day, sum(revenue)::float8 as revenue, sum(quantity)::float8 as units
+       from sales where sale_date between $1::date and $2::date group by sale_date`,
+    [span.lastStart, span.thisEnd],
+  );
+  const thisWeek = sumBetween(rows, span.thisStart, span.thisEnd);
+  const lastWeek = sumBetween(rows, span.lastStart, span.lastEnd);
+  const sameDays = sumBetween(rows, span.lastStart, span.lastSameEnd);
+  return {
+    ...span,
+    thisRevenue: thisWeek.revenue,
+    thisUnits: thisWeek.units,
+    lastRevenue: lastWeek.revenue,
+    lastUnits: lastWeek.units,
+    sameRevenue: sameDays.revenue,
+    change: weekChange(thisWeek.revenue, sameDays.revenue),
   };
 }

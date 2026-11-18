@@ -5,7 +5,7 @@
   "tagline": "Small-batch coffee, fresh bakes and a quiet corner to linger in.",
   "address": "12 Orchard Lane",
   "phone": "(555) 010-0142",
-  "timezone": "America/New_York",
+  "timezone": "America/Los_Angeles",
   "hours": {
     "mon": ["07:00", "16:00"],
     "tue": ["07:00", "16:00"],
