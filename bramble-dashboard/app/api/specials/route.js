@@ -29,10 +29,7 @@ export async function GET(request) {
 export async function PUT(request) {
   const identity = await requireWriter(request);
   if (identity instanceof Response) return identity;
-  const key = process.env.BRAMBLE_SPECIALS_KEY?.trim() ?? "";
-  if (key === "") {
-    return json({ error: "Add the same specials key on the menu and the dashboard, then save again." }, 503);
-  }
+  if (!identity.token) return json({ error: "Sign in again to save specials." }, 401);
 
   let body;
   try {
@@ -51,7 +48,7 @@ export async function PUT(request) {
   try {
     const response = await fetch(menuUrl(), {
       method: "PUT",
-      headers: { "content-type": "application/json", "x-bramble-key": key },
+      headers: { "content-type": "application/json", authorization: `Bearer ${identity.token}` },
       body: JSON.stringify({ items }),
       cache: "no-store",
     });

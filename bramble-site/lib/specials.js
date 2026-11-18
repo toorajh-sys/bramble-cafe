@@ -1,5 +1,3 @@
-import { timingSafeEqual } from "node:crypto";
-
 const MAX_SPECIALS = 3;
 
 export function normalizeSpecials(items) {
@@ -20,11 +18,4 @@ export function normalizeSpecials(items) {
   }
   if (cleaned.length > MAX_SPECIALS) throw new Error("You can list up to 3 specials.");
   return cleaned;
-}
-
-export function keysMatch(given, expected) {
-  const left = Buffer.from(String(given ?? ""));
-  const right = Buffer.from(String(expected ?? ""));
-  if (left.length === 0 || left.length !== right.length) return false;
-  return timingSafeEqual(left, right);
 }
