@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bramble cafe: menu, hours and today's specials</title>
+  <meta name="description" content="Menu, opening hours and today's specials at Bramble cafe.">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="hero">
+    <p class="eyebrow">Neighbourhood cafe</p>
+    <h1 id="name">Bramble</h1>
+    <p id="tagline" class="tagline"></p>
+    <p id="open-status" class="status" aria-live="polite"></p>
+  </header>
+
+  <main>
+    <section id="specials" aria-labelledby="specials-title" class="card highlight">
+      <h2 id="specials-title">Today's specials</h2>
+      <div id="specials-list"></div>
+    </section>
+
+    <section id="hours" aria-labelledby="hours-title" class="card">
+      <h2 id="hours-title">Opening hours</h2>
+      <table class="hours"><tbody id="hours-body"></tbody></table>
+      <p id="contact" class="muted"></p>
+    </section>
+
+    <section id="menu" aria-labelledby="menu-title">
+      <h2 id="menu-title" class="section-title">Menu</h2>
+      <div id="menu-list" class="menu-grid"></div>
+    </section>
+
+    <noscript><p class="card">Please enable JavaScript to see our menu, hours and specials.</p></noscript>
+    <p id="load-error" class="card" hidden>We could not load the menu just now. Please refresh the page.</p>
+  </main>
+
+  <footer class="foot muted">Bramble cafe</footer>
+  <script src="/app.js" type="module"></script>
+</body>
+</html>
